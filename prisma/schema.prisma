@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums for status tracking
+enum RunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum TriggerType {
+  FULL        // Run entire workflow
+  PARTIAL     // Run selected nodes
+  SINGLE      // Run single node
+}
+
+// Core Workflow Model
+model Workflow {
+  id          String   @id @default(uuid())
+  userId      String   // Map to Clerk User ID
+  name        String
+  
+  // React Flow JSON State
+  nodes       Json     @default("[]")
+  edges       Json     @default("[]")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  runs        WorkflowRun[]
+  
+  @@index([userId])
+}
+
+// Tracks a specific execution attempt of a workflow
+model WorkflowRun {
+  id          String      @id @default(uuid())
+  workflowId  String
+  workflow    Workflow    @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  
+  triggerType TriggerType @default(FULL)
+  status      RunStatus   @default(PENDING)
+  
+  startedAt   DateTime    @default(now())
+  completedAt DateTime?
+  duration    Int?        // in milliseconds
+
+  nodeRuns    NodeRun[]
+
+  @@index([workflowId])
+}
+
+// Tracks execution of a single node within a run
+model NodeRun {
+  id            String      @id @default(uuid())
+  workflowRunId String
+  workflowRun   WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  
+  nodeId        String      // The React Flow Node ID (e.g., "node-1")
+  status        RunStatus   @default(PENDING)
+  
+  // I/O Capture
+  inputs        Json?       // Snapshot of inputs used
+  outputs       Json?       // Snapshot of outputs produced
+  error         String?     // Error message if failed
+  
+  startedAt     DateTime    @default(now())
+  completedAt   DateTime?
+  duration      Int?        // in milliseconds
+
+  @@index([workflowRunId])
+}
