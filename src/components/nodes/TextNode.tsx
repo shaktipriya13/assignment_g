@@ -11,6 +11,7 @@ export function TextNode({ data, selected }: { data: { text?: string; }, selecte
       title="Text Node"
       icon={Type}
       selected={selected}
+      data={data}
       handles={[
         { type: "source", position: Position.Right, id: "output" }
       ]}

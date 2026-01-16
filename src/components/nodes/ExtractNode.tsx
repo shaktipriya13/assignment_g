@@ -21,6 +21,7 @@ export function ExtractNode({ id, data, selected }: NodeProps) {
       title="Extract Frame"
       icon={Film}
       selected={selected}
+      data={data}
       handles={[
         { type: "target", position: Position.Left, id: "video_url", style: { top: 60 } },
         { type: "target", position: Position.Left, id: "timestamp", style: { top: 125 } },

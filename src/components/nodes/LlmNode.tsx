@@ -29,6 +29,7 @@ export function LlmNode({ id, data, selected }: NodeProps) {
       title="Run Any LLM"
       icon={BrainCircuit}
       selected={selected}
+      data={data}
       handles={[
         { type: "target", position: Position.Left, id: "system_prompt", style: { top: 160 } },
         { type: "target", position: Position.Left, id: "user_message", style: { top: 265 } },

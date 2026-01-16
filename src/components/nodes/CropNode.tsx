@@ -51,6 +51,7 @@ export function CropNode({ id, data, selected }: NodeProps) {
       title="Crop Image"
       icon={Crop}
       selected={selected}
+      data={data}
       handles={[
         { type: "target", position: Position.Left, id: "image_url", style: { top: 90 } },
         { type: "target", position: Position.Left, id: "x_percent", style: { top: 165 } },

@@ -14,8 +14,9 @@ import ReactFlow, {
   Node,
   Panel,
 } from 'reactflow';
-import { Save } from 'lucide-react';
+import { Play, Save, Loader2 } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
+import { runWorkflowMock, RunStatus } from '@/lib/execution';
 
 import 'reactflow/dist/style.css';
 import TextNode from './nodes/TextNode';
@@ -37,6 +38,10 @@ export default function WorkflowCanvas() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Execution State
+  const [isRunning, setIsRunning] = useState(false);
+  const [nodeStatuses, setNodeStatuses] = useState<Record<string, RunStatus>>({});
 
   // Load workflow on mount
   useEffect(() => {
@@ -74,6 +79,19 @@ export default function WorkflowCanvas() {
     
     loadWorkflow();
   }, [setNodes, setEdges]);
+  
+  // Update nodes with execution status
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          status: nodeStatuses[node.id], // Pass status to node data
+        },
+      }))
+    );
+  }, [nodeStatuses, setNodes]);
 
   const onConnect = useCallback(
     (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
@@ -117,9 +135,7 @@ export default function WorkflowCanvas() {
 
   const onSave = async () => {
     if (!reactFlowInstance) return;
-    
     const flow = reactFlowInstance.toObject();
-    
     try {
         await fetch('/api/workflows', {
             method: 'POST',
@@ -130,6 +146,26 @@ export default function WorkflowCanvas() {
         console.error("Failed to save", error);
         alert("Failed to save workflow");
     }
+  };
+  
+  const onRun = async () => {
+      if (isRunning) return;
+      setIsRunning(true);
+      setNodeStatuses({}); // Reset statuses
+      
+      try {
+          await runWorkflowMock({
+              nodes,
+              edges,
+              onStatusUpdate: (nodeId, status) => {
+                  setNodeStatuses((prev) => ({ ...prev, [nodeId]: status }));
+              }
+          });
+      } catch (err) {
+          console.error("Execution failed", err);
+      } finally {
+          setIsRunning(false);
+      }
   };
 
   const nodeTypes = useMemo(() => ({
@@ -162,13 +198,22 @@ export default function WorkflowCanvas() {
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         <Controls />
         <MiniMap zoomable pannable className="bg-slate-50 border border-slate-200" />
-        <Panel position="top-right">
+        <Panel position="top-right" className="flex gap-2">
+             <button 
+                onClick={onRun}
+                disabled={isRunning}
+                 className="bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white px-4 py-2 rounded-md shadow flex items-center gap-2 text-sm font-medium transition-colors"
+             >
+                {isRunning ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} fill="currentColor" />}
+                {isRunning ? "Running..." : "Run Workflow"}
+             </button>
              <button 
                 onClick={onSave}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow flex items-center gap-2 text-sm font-medium transition-colors"
+                disabled={isRunning}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white px-4 py-2 rounded-md shadow flex items-center gap-2 text-sm font-medium transition-colors"
              >
                 <Save size={16} />
-                Save Workflow
+                Save
              </button>
         </Panel>
       </ReactFlow>

@@ -24,6 +24,7 @@ export function VideoNode({ data, selected }: { data: { videoUrl?: string; }, se
       title="Upload Video"
       icon={Video}
       selected={selected}
+      data={data}
       handles={[
         { type: "source", position: Position.Right, id: "video" }
       ]}

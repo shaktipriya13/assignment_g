@@ -25,6 +25,7 @@ export function ImageNode({ data, selected }: { data: { imageUrl?: string; }, se
       title="Upload Image"
       icon={ImageIcon}
       selected={selected}
+      data={data}
       handles={[
         { type: "source", position: Position.Right, id: "image" }
       ]}
