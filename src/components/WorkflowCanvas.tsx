@@ -43,16 +43,24 @@ export default function WorkflowCanvas() {
     const loadWorkflow = async () => {
         try {
             const res = await fetch('/api/workflows');
+            if (!res.ok) {
+                console.error("Failed to fetch workflow:", res.statusText);
+                setIsLoading(false);
+                return;
+            }
+            
             const data = await res.json();
             
-            if (data) {
-                const parsedNodes = JSON.parse(data.nodes as string);
-                const parsedEdges = JSON.parse(data.edges as string);
-                // Restore logic: ensure nodes/edges are set
-                if (parsedNodes) setNodes(parsedNodes);
-                if (parsedEdges) setEdges(parsedEdges);
+            if (data && data.nodes && data.edges) {
+                // If saved as stringified JSON in Prisma, parse it. 
+                // If saved as raw JSON, it might already be an object.
+                const parsedNodes = typeof data.nodes === 'string' ? JSON.parse(data.nodes) : data.nodes;
+                const parsedEdges = typeof data.edges === 'string' ? JSON.parse(data.edges) : data.edges;
+                
+                setNodes(parsedNodes || []);
+                setEdges(parsedEdges || []);
             } else {
-                // If no workflow, set initial defaults
+                // If no workflow found or empty, set initial defaults
                  setNodes([
                     { id: '1', type: 'textNode', position: { x: 100, y: 100 }, data: { text: 'Hello Weavy!' } },
                  ]);

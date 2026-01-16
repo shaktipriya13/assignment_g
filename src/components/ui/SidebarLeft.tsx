@@ -14,6 +14,7 @@ import {
   GripVertical
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 const NODE_TYPES = [
   { type: "textNode", label: "Text Node", icon: Type },
@@ -89,12 +90,25 @@ export function SidebarLeft() {
         ))}
       </div>
 
-      {/* Footer Info */}
-      {!collapsed && (
-        <div className="p-4 border-t border-slate-200 text-xs text-slate-400 text-center">
-          Drag nodes to canvas
-        </div>
-      )}
+      {/* Footer / User Profile */}
+      <div className={cn(
+        "border-t border-slate-200 flex items-center gap-3",
+        collapsed ? "p-2 justify-center" : "p-4"
+      )}>
+         <SignedIn>
+            <UserButton showName={!collapsed} />
+         </SignedIn>
+         <SignedOut>
+             <SignInButton mode="modal">
+                <button className={cn(
+                    "flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors",
+                     collapsed && "justify-center"
+                )}>
+                    {collapsed ? <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center font-bold">L</div> : "Log In"}
+                </button>
+             </SignInButton>
+         </SignedOut>
+      </div>
     </aside>
   );
 }

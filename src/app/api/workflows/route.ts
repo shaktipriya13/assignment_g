@@ -48,7 +48,10 @@ export async function GET(req: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     // Fetch the single workflow for this user
@@ -59,6 +62,9 @@ export async function GET(req: Request) {
     return NextResponse.json(workflow || null); 
   } catch (error) {
     console.error("[WORKFLOW_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Error" },
+      { status: 500 }
+    );
   }
 }
