@@ -154,17 +154,72 @@ export default function WorkflowCanvas() {
       setNodeStatuses({}); // Reset statuses
       
       try {
-          await runWorkflowMock({
-              nodes,
-              edges,
-              onStatusUpdate: (nodeId, status) => {
-                  setNodeStatuses((prev) => ({ ...prev, [nodeId]: status }));
-              }
+          // 1. Trigger the run
+          const res = await fetch('/api/runs', {
+              method: 'POST',
+              body: JSON.stringify({}), // Body can be empty, backend fetches graph from DB
           });
+          
+          if (!res.ok) throw new Error("Failed to start run");
+          
+          const { id: runId } = await res.json();
+          console.log("Started Run:", runId);
+
+          // 2. Poll for status
+          const interval = setInterval(async () => {
+              try {
+                  const pollRes = await fetch(`/api/runs/${runId}`);
+                  if (!pollRes.ok) return;
+
+                  const runData = await pollRes.json();
+                  
+                  // Update Node Statuses & Outputs
+                  const newStatuses: Record<string, RunStatus> = {};
+                  const newOutputs: Record<string, any> = {};
+
+                  runData.nodeRuns.forEach((nr: any) => {
+                      newStatuses[nr.nodeId] = nr.status as RunStatus;
+                      if (nr.outputs) {
+                          newOutputs[nr.nodeId] = typeof nr.outputs === 'string' 
+                            ? JSON.parse(nr.outputs) 
+                            : nr.outputs;
+                      }
+                  });
+                  setNodeStatuses(newStatuses);
+                  
+                  // Sync outputs to nodes immediately so UI updates
+                  setNodes((nds) => nds.map((n) => {
+                      if (newOutputs[n.id]) {
+                          return { 
+                              ...n, 
+                              data: { ...n.data, output: newOutputs[n.id] } 
+                          };
+                      }
+                      return n;
+                  }));
+
+                  // Check for completion
+                  if (runData.status === "COMPLETED" || runData.status === "FAILED") {
+                      clearInterval(interval);
+                      setIsRunning(false);
+                      if (runData.status === "FAILED") {
+                          alert(`Workflow Failed: ${runData.error || "Unknown error"}`);
+                      } else {
+                          // alert("Workflow Completed Successfully!");
+                      }
+                      
+                      // Refresh History (Broadcast event or simple timeout reload if strictly needed, 
+                      // but for now we let the user manually refresh or we can add a refresh trigger later)
+                  }
+              } catch (e) {
+                  console.error("Polling error", e);
+              }
+          }, 1000);
+
       } catch (err) {
           console.error("Execution failed", err);
-      } finally {
           setIsRunning(false);
+          alert("Failed to start workflow run.");
       }
   };
 

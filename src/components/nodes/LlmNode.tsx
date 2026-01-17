@@ -7,9 +7,9 @@ import { BaseNode } from "./BaseNode";
 import { cn } from "@/lib/utils";
 
 const MODELS = [
-  { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
-  { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-  { value: "gemini-pro-vision", label: "Gemini Pro Vision" },
+  { value: "gemini-pro", label: "Gemini Pro (Stable)" },
+  { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Fast)" },
+  { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Advanced)" },
 ];
 
 export function LlmNode({ id, data, selected }: NodeProps) {
@@ -113,7 +113,7 @@ export function LlmNode({ id, data, selected }: NodeProps) {
              <div className="mt-2 pt-2 border-t border-slate-100">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Response</label>
                 <div className="p-2 bg-blue-50/50 border border-blue-100 rounded text-xs text-slate-700 font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
-                    {data.output}
+                    {data.output?.response || (typeof data.output === 'string' ? data.output : JSON.stringify(data.output, null, 2))}
                 </div>
              </div>
         )}
